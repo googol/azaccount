@@ -1,0 +1,47 @@
+#!/bin/bash
+
+set -euo pipefail
+
+SELF_CMD="$0"
+
+function echo_error {
+    echo "$@" 1>&2;
+}
+
+function list_accounts {
+    az account list | jq '.[].name' --raw-output
+}
+
+function get_current_account {
+    az account show | jq '.name' --raw-output
+}
+
+function set_account {
+    local id
+    id=$(az account list | jq ".[] | select(.name == \"$1\") | .id" --raw-output)
+    if [ -z "$id" ]; then
+        echo_error "Failed to find the requested id"
+        exit 1
+    else
+        az account set -s "$id"
+        echo_error "Switched to account $1 ($id)"
+    fi
+}
+
+function choose_account_interactive {
+    local choice
+    choice=$(FZF_DEFAULT_COMMAND="$SELF_CMD" fzf --ansi --no-preview || true)
+
+    if [ -z "$choice" ]; then
+        echo_error "You didn't make a choice"
+        exit 1
+    else
+        set_account "$choice"
+    fi
+}
+
+if [[ -t 1 ]]; then
+    choose_account_interactive
+else
+    list_accounts
+fi
