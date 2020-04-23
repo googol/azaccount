@@ -40,7 +40,10 @@ function choose_account_interactive {
     fi
 }
 
-if [[ -t 1 ]]; then
+FIRST_PARAM="${1:-}"
+if [[ ! -z "$FIRST_PARAM" ]]; then
+    set_account "$FIRST_PARAM"
+elif [[ -t 1 ]]; then
     choose_account_interactive
 else
     list_accounts
